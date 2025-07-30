@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Match App</title>
+</head>
+<body>
+    <h2>Upload or Capture a Face</h2>
+
+    <!-- Upload Form -->
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*" required />
+        <button type="submit">Upload and Match</button>
+    </form>
+
+    <hr>
+
+    <!-- Webcam -->
+    <h3>Or Use Webcam</h3>
+    <video id="video" width="320" height="240" autoplay></video><br>
+    <button type="button" id="capture">📸 Capture</button>
+    <form method="POST" id="webcamForm">
+        <input type="hidden" name="webcam_image" id="webcam_image">
+        <button type="submit">Send Webcam Photo</button>
+    </form>
+    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('capture');
+        const webcamInput = document.getElementById('webcam_image');
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => { video.srcObject = stream; })
+            .catch(err => { console.error("Camera access error:", err); });
+
+        captureBtn.addEventListener('click', () => {
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            webcamInput.value = canvas.toDataURL('image/png');
+        });
+    </script>
+
+    <hr>
+
+    {% if matched %}
+        <h3>✅ Matched:</h3>
+        <ul>
+        {% for file in matched %}
+            <li>{{ file }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if unmatched %}
+        <h3>❌ Unmatched:</h3>
+        <ul>
+        {% for file in unmatched %}
+            <li>{{ file }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+</body>
+</html>

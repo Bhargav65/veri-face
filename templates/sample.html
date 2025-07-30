@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Face Match App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lottie-web@5.9.6/build/player/lottie.min.js"></script>
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+<script src="https://cdn.lordicon.com/lordicon.js"></script>
+
+  <style>
+    :root {
+    --main-bg: #e9b50b;
+    --card-bg:#f0f0f0;
+  }
+    * {
+      box-sizing: border-box;
+      font-family: 'Roboto', Arial, sans-serif;
+    }
+
+    body {
+      background: #fff9e6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 4px solid #000;
+      box-shadow: 10px 10px 0 #000;
+      padding: 20px;
+      max-width: 500px;
+      width: 100%;
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    .card::before {
+      content: "FACE MATCH";
+      position: absolute;
+      top: -15px;
+      left: 20px;
+      background: var(--main-bg);
+      color: #000;
+      font-weight: bold;
+      padding: 5px 10px;
+      font-size: 14px;
+      border: 2px solid #000;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+      width: 100%;
+    }
+
+    input[type="text"],
+    input[type="file"],
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #000;
+      background: #fff;
+    }
+
+    .btn {
+      display: inline-block;
+      background: var(--main-bg);
+      padding: 10px 20px;
+      border: 3px solid #000;
+      cursor: pointer;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    .btn:hover {
+      box-shadow: 4px 4px 0 #000;
+      transform: translateY(-2px);
+    }
+
+    .results {
+      max-width: 500px;
+      width: 100%;
+      text-align: left;
+    }
+
+    .results h3 {
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+
+    li {
+      background: #fff;
+      border: 2px solid #000;
+      padding: 8px;
+      margin-bottom: 5px;
+    }
+
+    #popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 90%;
+      max-width: 400px;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border: 4px solid #000;
+      box-shadow: 10px 10px 0 #000;
+      padding: 20px;
+      z-index: 1000;
+    }
+
+    #popup video {
+      width: 100%;
+      border: 3px solid #000;
+    }
+
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+
+    canvas {
+      display: none;
+    }
+
+    #main-content.blurred {
+      filter: blur(5px);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    #progress-container.card {
+      background: rgba(240, 240, 240, 0.9);
+      backdrop-filter: blur(6px);
+      border: 4px solid #000;
+      box-shadow: 10px 10px 0 #000;
+      padding: 20px;
+      width: 90%;
+      max-width: 400px;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1001;
+      display: none;
+      text-align: center;
+    }
+
+    #progress-percent {
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #000;
+    }
+
+    progress {
+      width: 100%;
+      margin-top: 10px;
+      height: 25px;
+      appearance: none;
+      -webkit-appearance: none;
+      border-radius: 25px;
+      overflow: hidden;
+    }
+
+    progress::-webkit-progress-bar {
+      background-color: #fff;
+      border: 2px solid #000;
+      border-radius: 25px;
+    }
+
+    progress::-webkit-progress-value {
+      background-color: var(--main-bg);
+      border-radius: 25px;
+    }
+
+    progress::-moz-progress-bar {
+      background-color: var(--main-bg);
+      border-radius: 25px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Progress Container -->
+  <div id="progress-container" class="card">
+    <div id="progress-percent">0%</div>
+    <label>⏳ Matching Progress</label>
+    <progress id="match-progress" value="0" max="100"></progress>
+  </div>
+
+  <div id="main-content">
+    <h1>Face Match App</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+      <div class="card">
+
+        <!-- Lottie + Label + Select -->
+        <div class="form-group">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <div id="folder-lottie" style="width: 30px; height: 30px;"></div>
+    <label for="source_select" style="font-weight: bold; margin: 0;">Select Source</label>
+  </div>
+  <select id="source_select" class="btn" name="source_select" onchange="toggleSource(this.value)">
+    <option value="drive">Google Drive Folder</option>
+    <option value="local">Upload Local Folder</option>
+  </select>
+</div>
+
+
+
+
+        <div class="form-group" id="drive_input_group">
+          
+          <label><lord-icon
+    src="https://cdn.lordicon.com/gsjfryhc.json"
+    trigger="hover"
+    stroke="bold"
+    colors="primary:#000000,secondary:#000000"
+    style="width:25px;height:25px">
+</lord-icon> Google Drive Folder Link</label>
+          <input type="text" name="drive_link" placeholder="Paste Google Drive folder link">
+        </div>
+
+      <div class="form-group" id="local_folder_group" style="display: none;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+<lord-icon
+    src="https://cdn.lordicon.com/tsrgicte.json"
+    trigger="morph"
+    stroke="bold"
+    state="morph-open"
+    colors="primary:#000000,secondary:#000000"
+    style="width:30px;height:30px">
+</lord-icon>    <label style="margin: 0;">Upload Local Folder</label>
+  </div>
+  <input type="file" name="local_folder[]" webkitdirectory directory multiple />
+</div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+  <button type="button" class="btn" onclick="openPopup()" style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+    <lord-icon
+      src="https://cdn.lordicon.com/wsaaegar.json"
+      trigger="hover"
+      stroke="bold"
+      colors="primary:#000000,secondary:#000000"
+      style="width: 30px; height: 30px;">
+    </lord-icon>
+    Take or Upload Photo
+  </button>
+  <input type="hidden" name="popup_webcam_image" id="popup_webcam_image" />
+  <input type="file" name="popup_file" id="popup_file_input" accept="image/*" style="display:none;" />
+</div>
+
+
+        <button type="submit" class="btn" style="display: flex; align-items: center; gap: 10px; justify-content: center;">
+  <lord-icon
+    src="https://cdn.lordicon.com/wjyqkiew.json"
+    trigger="hover"
+    stroke="bold"
+    colors="primary:#000000,secondary:#000000"
+    style="width: 30px; height: 30px;">
+  </lord-icon>
+  Match Faces
+</button>
+
+      </div>
+    </form>
+
+    <!-- Results -->
+    <div class="results">
+      {% if matched %}
+        <h3>✅ Matched Photos:</h3>
+        <ul>{% for file in matched %}<li>{{ file }}</li>{% endfor %}</ul>
+      {% endif %}
+
+      {% if unmatched %}
+        <h3>❌ Unmatched Photos:</h3>
+        <ul>{% for file in unmatched %}<li>{{ file }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    <!-- Webcam Popup -->
+    <div id="overlay"></div>
+    <div id="popup">
+      <video id="video" autoplay></video>
+      <button type="button" class="btn" onclick="captureImage()"><lord-icon
+    src="https://cdn.lordicon.com/wsaaegar.json"
+    trigger="hover"
+    stroke="bold"
+    colors="primary:#000000,secondary:#000000"
+    style="width:15px;height:15px">
+</lord-icon> Capture</button>
+      <button type="button" class="btn" onclick="uploadInstead()"><lord-icon
+    src="https://cdn.lordicon.com/tsrgicte.json"
+    trigger="morph"
+    stroke="bold"
+    state="morph-open"
+    colors="primary:#000000,secondary:#000000"
+    style="width:15px;height:15px">
+</lord-icon> Upload Instead</button>
+      <button type="button" class="btn" onclick="closePopup()">❌ Cancel</button>
+      <canvas id="canvas" width="320" height="240"></canvas>
+    </div>
+  </div>
+
+  <!-- Firebase + Lottie -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+ <script>
+  const folderAnimation = lottie.loadAnimation({
+    container: document.getElementById('folder-lottie'),
+    renderer: 'svg',
+    loop: false,
+    autoplay: false,
+    path: "{{ url_for('static', filename='folder.json') }}"
+  });
+
+  const folderLottie = document.getElementById('folder-lottie');
+  folderLottie.addEventListener('mouseenter', () => folderAnimation.goToAndPlay(0, true));
+  folderLottie.addEventListener('mouseleave', () => folderAnimation.stop());
+</script>
+
+<script id="firebase-config" type="application/json">
+  {{ firebase_config | tojson }}
+</script>
+
+<script>
+  const firebaseConfig = JSON.parse(document.getElementById("firebase-config").textContent);
+</script>
+
+
+  <script type="text/javascript">
+    window.onload = function () {
+      
+      
+
+      firebase.initializeApp(firebaseConfig);
+
+      const progressContainer = document.getElementById("progress-container");
+      const progressBar = document.getElementById("match-progress");
+      const progressPercent = document.getElementById("progress-percent");
+
+      firebase.database().ref("face_match_progress").on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (!data || data.total === 0) return;
+
+        const percent = Math.round((data.current / data.total) * 100);
+        progressBar.value = percent;
+        progressPercent.textContent = `${percent}%`;
+
+        progressContainer.style.display = "block";
+        document.getElementById("main-content").classList.add("blurred");
+
+        if (data.current >= data.total) {
+          setTimeout(() => {
+            progressContainer.style.display = "none";
+            document.getElementById("main-content").classList.remove("blurred");
+          }, 4000);
+        }
+      });
+
+      document.querySelector("form").addEventListener("submit", function (e) {
+  e.preventDefault();
+  const form = e.target;
+  const progressContainer = document.getElementById("progress-container");
+  const mainContent = document.getElementById("main-content");
+
+  const formData = new FormData();
+
+  // Get file input (local folder)
+  const folderInput = form.querySelector('input[name="local_folder[]"]');
+  if (folderInput && folderInput.files.length > 0) {
+    for (const file of folderInput.files) {
+      formData.append("local_folder[]", file, file.webkitRelativePath);
+    }
+  }
+
+  // Get reference photo (either webcam or uploaded)
+  const fileInput = form.querySelector("#popup_file_input");
+  const webcamInput = form.querySelector("#popup_webcam_image");
+  if (fileInput.files.length > 0) {
+    formData.append("popup_file", fileInput.files[0]);
+  } else if (webcamInput.value.trim() !== "") {
+    formData.append("popup_webcam_image", webcamInput.value);
+  }
+
+  // Append source selection
+  const sourceSelect = form.querySelector("#source_select");
+  formData.append("source_select", sourceSelect.value);
+
+  // Append Google Drive link (if any)
+  const driveLink = form.querySelector('input[name="drive_link"]');
+  if (driveLink && driveLink.value.trim() !== "") {
+    formData.append("drive_link", driveLink.value);
+  }
+
+  // Validation
+  if (!formData.has("popup_file") && !formData.has("popup_webcam_image")) {
+    alert("Please take or upload a reference image.");
+    return;
+  }
+
+  if (
+    sourceSelect.value === "drive" &&
+    (!formData.has("drive_link") || driveLink.value.trim() === "")
+  ) {
+    alert("Please provide a valid Google Drive folder link.");
+    return;
+  }
+
+  if (
+    sourceSelect.value === "local" &&
+    (!folderInput || folderInput.files.length === 0)
+  ) {
+    alert("Please upload a local folder with images.");
+    return;
+  }
+
+  // Start progress UI
+  progressContainer.style.display = "block";
+  mainContent.classList.add("blurred");
+
+  fetch("/", {
+    method: "POST",
+    body: formData,
+  })
+    .then((response) => {
+      const disposition = response.headers.get("Content-Disposition");
+      if (disposition && disposition.includes("attachment")) {
+        return response.blob().then((blob) => {
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = downloadUrl;
+          a.download = "matched_photos.zip";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(downloadUrl);
+          progressContainer.style.display = "none";
+          mainContent.classList.remove("blurred");
+          window.location.reload();
+        });
+      } else {
+        return response.text().then((html) => {
+          document.open();
+          document.write(html);
+          document.close();
+        });
+      }
+    })
+    .catch((err) => {
+      alert("Error submitting form: " + err.message);
+      progressContainer.style.display = "none";
+      mainContent.classList.remove("blurred");
+      location.reload();
+    });
+});
+
+
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const webcamInput = document.getElementById("popup_webcam_image");
+      const overlay = document.getElementById("overlay");
+      const popup = document.getElementById("popup");
+      const fileInput = document.getElementById("popup_file_input");
+
+      window.openPopup = function () {
+        overlay.style.display = "block";
+        popup.style.display = "block";
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => { video.srcObject = stream; })
+          .catch(err => { alert("Camera access denied."); });
+      };
+
+      window.closePopup = function () {
+        overlay.style.display = "none";
+        popup.style.display = "none";
+        if (video.srcObject) video.srcObject.getTracks().forEach(track => track.stop());
+      };
+
+      window.captureImage = function () {
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        webcamInput.value = canvas.toDataURL("image/png");
+        fileInput.value = "";
+        closePopup();
+        alert("📸 Image captured. Ready to match!");
+      };
+
+      window.uploadInstead = function () {
+        closePopup();
+        fileInput.click();
+      };
+
+      fileInput.addEventListener("change", () => {
+        webcamInput.value = "";
+        if (fileInput.files.length > 0) alert("📁 File selected. Ready to match!");
+      });
+
+      window.toggleSource = function (source) {
+        document.getElementById('drive_input_group').style.display = (source === 'drive') ? 'block' : 'none';
+        document.getElementById('local_folder_group').style.display = (source === 'local') ? 'block' : 'none';
+      };
+    };
+  </script>
+</body>
+</html>
