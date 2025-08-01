@@ -1,12 +1,12 @@
 [phases.setup]
 cmds = [
-  "apt-get update && apt-get install -y python3.11 python3.11-venv python3.11-dev python3-pip build-essential cmake libjpeg-dev zlib1g-dev"
+  "apt-get update && apt-get install -y python3.12 python3.12-venv python3.12-dev python3-pip build-essential cmake libjpeg-dev zlib1g-dev"
 ]
 
 [phases.install]
 cmds = [
-  "python3.11 -m venv /opt/venv && . /opt/venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt"
+  "python3.12 -m venv /opt/venv && . /opt/venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt"
 ]
 
 [phases.start]
-cmd = "python3.11 app.py"
+cmd = "python3.12 app.py"
