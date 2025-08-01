@@ -1,0 +1,10 @@
+Flask
+firebase-admin
+python-dotenv
+google-api-python-client
+pillow
+face-recognition
+numpy
+pymongo
+gridfs
+pillow-heif
