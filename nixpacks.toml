@@ -1,8 +1,13 @@
 [phases.setup]
-nixPkgs = ["python311", "cmake", "gcc", "g++", "libjpeg", "zlib"]
+nixPkgs = ["python311", "pip", "gcc", "g++", "cmake", "libjpeg", "zlib"]
 
-[phases.build]
-cmds = ["pip install --upgrade pip", "pip install -r requirements.txt"]
+[phases.install]
+cmds = [
+  "python -m venv /opt/venv",
+  ". /opt/venv/bin/activate",
+  "pip install --upgrade pip",
+  "pip install -r requirements.txt"
+]
 
-[start]
-cmd = "python app.py" # or your main file
+[phases.start]
+cmd = "python app.py"
