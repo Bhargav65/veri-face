@@ -1,9 +1,29 @@
-Flask==2.3.3
-firebase-admin==6.4.0
-python-dotenv==1.0.1
-google-api-python-client==2.127.0
-pillow==9.5.0
-pillow-heif==0.12.0
+# Core ML and dependencies
+numpy>=1.25,<2.0
+scipy>=1.10.0
+pandas
+matplotlib
+
+# Image and face recognition
 face_recognition==1.3.0
-numpy==1.23.5
-pymongo==4.6.1
+dlib==19.24.0
+opencv-python-headless
+pillow
+
+# Web backend
+Flask
+gunicorn
+
+# Google & Firebase (if you’re using them)
+google-api-python-client
+google-auth
+google-auth-oauthlib
+firebase-admin
+
+# Environment loading
+python-dotenv
+
+# Build tools (required for many native extensions)
+setuptools>=68
+wheel
+build
