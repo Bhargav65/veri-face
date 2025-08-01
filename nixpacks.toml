@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["python311", "cmake", "gcc", "g++", "libjpeg", "zlib"]
+
+[phases.build]
+cmds = ["pip install --upgrade pip", "pip install -r requirements.txt"]
+
+[start]
+cmd = "python app.py" # or your main file
