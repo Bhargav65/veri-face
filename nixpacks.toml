@@ -3,10 +3,7 @@ nixPkgs = ["python311", "pip", "gcc", "g++", "cmake", "libjpeg", "zlib"]
 
 [phases.install]
 cmds = [
-  "python -m venv /opt/venv",
-  ". /opt/venv/bin/activate",
-  "pip install --upgrade pip",
-  "pip install -r requirements.txt"
+  "python -m venv /opt/venv && . /opt/venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt"
 ]
 
 [phases.start]
