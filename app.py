@@ -336,4 +336,4 @@ if __name__ == "__main__":
         print("🔥 Google Drive API failed to initialize -- exiting.")
         exit(1)
     print("🚀 All dependencies ready. Starting app...")
-    app.run(debug=True)
+    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
